@@ -64,6 +64,21 @@ public class Uni {
 	    bufferWritter.close();
 	}
 
+	//calculate one test sentence's possibility in the given language
+	public static double testData(String s, Map<Character, ArrayList<Double>> hm){
+		double probability = 0.0;
+		for(int i = 0; i<s.length(); i++){
+			char c = s.charAt(i);
+			if(Character.isLetter(c)){
+				if(hm.containsKey(c)){
+					ArrayList<Double> ls = hm.get(c);
+					probability += Math.log10(ls.get(0));
+				}
+			}
+		}
+		return probability;
+	}
+	
 	public static void parse(String part, Map<Character, Integer> hm){
 		for(int i = 0; i < part.length(); i++){
        	 char c = part.charAt(i);
@@ -76,6 +91,26 @@ public class Uni {
  	        	   }
 	 		 } 			  	        	           	  
        }
+	}
+	
+	private static HashMap sortByValues(Map<Character, Integer> hm) { 
+	       List list = new LinkedList(hm.entrySet());
+	       // Defined Custom Comparator here
+	       Collections.sort(list, new Comparator() {
+	            public int compare(Object o1, Object o2) {
+	               return ((Comparable) ((Map.Entry) (o2)).getValue())
+	                  .compareTo(((Map.Entry) (o1)).getValue());
+	            }
+	       });
+
+	       // Here I am copying the sorted list in HashMap
+	       // using LinkedHashMap to preserve the insertion order
+	       HashMap sortedHashMap = new LinkedHashMap();
+	       for (Iterator it = list.iterator(); it.hasNext();) {
+	              Map.Entry entry = (Map.Entry) it.next();
+	              sortedHashMap.put(entry.getKey(), entry.getValue());
+	       } 
+	       return sortedHashMap;
 	}
 	
 	public static void printHashMap(Map<Character, Integer> hm){
@@ -105,19 +140,27 @@ public class Uni {
 	         else if(parts[2].equalsIgnoreCase("pt"))
 	        	 parse(parts[3], hm_pt);
 	     }
-//	     printHashMap(hm_eu);
+	      
+	     hm_eu = sortByValues(hm_eu);
+	     printHashMap(hm_eu);
 //	     printHashMap(hm_ca);
 //	     printHashMap(hm_gl);
 //	     printHashMap(hm_es);
 //	     printHashMap(hm_en);
 //	     printHashMap(hm_pt);
 	     calculateProbability("Basque",hm_eu, pro_eu);
-	     calculateProbability("Catalan",hm_ca, pro_ca);
-	     calculateProbability("Galician",hm_gl, pro_gl);
-	     calculateProbability("Spanish",hm_es, pro_es);
-	     calculateProbability("English",hm_en, pro_en);
-	     calculateProbability("Portuguese",hm_pt, pro_pt);
+//	     calculateProbability("Catalan",hm_ca, pro_ca);
+//	     calculateProbability("Galician",hm_gl, pro_gl);
+//	     calculateProbability("Spanish",hm_es, pro_es);
+//	     calculateProbability("English",hm_en, pro_en);
+//	     calculateProbability("Portuguese",hm_pt, pro_pt);
 	     in.close();
+	     
+	     BufferedReader readTestFile = new BufferedReader(new FileReader("simple-testing-tweets_clean.txt"));
+	     while ((line = in.readLine()) != null) {
+	         String parts[] = line.split("\t");
+	        
+	     }
 	}
 
 }
