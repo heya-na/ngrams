@@ -33,30 +33,33 @@ public class Bigram {
 	static Map<String, ArrayList<Double>> pro_pt = new HashMap<String, ArrayList<Double>>();
 	
 	//confusion Matrix
-		static int[][] confusionMatrix  = new int[6][6];
+	static int[][] confusionMatrix  = new int[6][6];
+	
+	//The probability of each language in the training set
+	static List<Double> pro_lang = new ArrayList<Double>();
 		
-		public static void printMatrix() throws IOException{
-			 File file2 =new File("analysis-bigram.txt");		
-			 //if file doesn't exists, then create it
-		     if(!file2.exists()){
-		    	 file2.createNewFile();
-			 }    				
-		    //true = append file
-			FileWriter fileWritter2 = new FileWriter(file2.getName(),true);
-			BufferedWriter bufferWritter2 = new BufferedWriter(fileWritter2);     	
-			bufferWritter2.write("The confusion matrix of languages(in the order of eu ca gl es en pt):");
-			bufferWritter2.newLine();
-			
-			for(int i = 0; i<6; i++){
-				for(int j = 0; j<6; j++){
-					bufferWritter2.write(confusionMatrix[i][j] + "\t");
-					System.out.print(confusionMatrix[i][j] + "\t");
-				}
-				bufferWritter2.newLine();
-				System.out.println();
+	public static void printMatrix() throws IOException{
+		 File file2 =new File("analysis-bigram.txt");		
+		 //if file doesn't exists, then create it
+	     if(!file2.exists()){
+	    	 file2.createNewFile();
+		 }    				
+	    //true = append file
+		FileWriter fileWritter2 = new FileWriter(file2.getName(),true);
+		BufferedWriter bufferWritter2 = new BufferedWriter(fileWritter2);     	
+		bufferWritter2.write("The confusion matrix of languages(in the order of eu ca gl es en pt):");
+		bufferWritter2.newLine();
+		
+		for(int i = 0; i<6; i++){
+			for(int j = 0; j<6; j++){
+				bufferWritter2.write(confusionMatrix[i][j] + "\t");
+				//System.out.print(confusionMatrix[i][j] + "\t");
 			}
-			bufferWritter2.close();
+			bufferWritter2.newLine();
+			//System.out.println();
 		}
+		bufferWritter2.close();
+	}	
 		
 		public static void matrix(String s1, String s2){
 			int i = m(s1);
@@ -121,11 +124,24 @@ public class Bigram {
 	    BufferedWriter bufferWritter = new BufferedWriter(fileWritter);     
 	    bufferWritter.write(str);
 	    bufferWritter.newLine();
+	    
 	    int index = 1;
+	    String fullstr = "";
+   	 	for(String k: hm.keySet()){
+   	 		fullstr += k;
+   	 	}
+   	 	
+   	 	//System.out.println(fullstr);
+   	 	ArrayList<Character> unique = new ArrayList<Character>();
+        for( int j = 0; j < fullstr.length(); j++){
+       	 if( !unique.contains( fullstr.charAt( j ) ) )
+                unique.add( fullstr.charAt( j ) );
+        }	
+        //System.out.println(unique.size());
 	    while(i.hasNext()){
 	    	 String key = i.next().getKey();	 
-	    	 unsmoothedprobability = (double)hm.get(key) / sum;
-	         smoothedprobability = (double)(hm.get(key)+ 0.1) / (sum + hm.size()*hm.size()*0.1);
+	    	 unsmoothedprobability = (double)hm.get(key) / sum;	    	         
+	         smoothedprobability = (double)(hm.get(key)+ 0.1) / (sum + unique.size()*unique.size()*0.1);	        
 	         ArrayList<Double> ls = new ArrayList<Double>();
 	         ls.add(unsmoothedprobability); //unsmoothed
        	   	 ls.add(smoothedprobability); //smoothed
@@ -138,21 +154,6 @@ public class Bigram {
 	         } 
 	    }	
 	    bufferWritter.close();
-	}
-		
-	
-	public static void parseBigram(String part, Map<Character, Integer> hm){
-		for(int i = 0; i < part.length(); i++){
-       	 char c = part.charAt(i);
-	 		 if(Character.isLetter(c)){
-	 			Integer val = hm.get(new Character(c));
- 	        	   if(val != null){
- 	        		   hm.put(c, new Integer(val + 1));
- 	        	   }else{
- 	        		   hm.put(c,1);
- 	        	   }
-	 		 } 			  	        	           	  
-       }
 	}
 	
 	public static void parse(String part, Map<String, Integer> hm){
@@ -203,7 +204,7 @@ public class Bigram {
 					}
 				}
 			}
-			System.out.println(probability);
+			//System.out.println(probability);
 			return probability;
 	}
 		
@@ -219,23 +220,52 @@ public class Bigram {
 	public static void main(String[] args) throws IOException {
 		BufferedReader in = new BufferedReader(new FileReader("simple-training-tweets_clean.txt"));
 		//BufferedReader in = new BufferedReader(new FileReader("training data.txt"));
-	    String line = "";
-	     while ((line = in.readLine()) != null) {
-	         String parts[] = line.split("\t");
-	         parts[3] = parts[3].toLowerCase();
-	         if(parts[2].equalsIgnoreCase("eu"))
-	        	 parse(parts[3], hm_eu);
-	         else if(parts[2].equalsIgnoreCase("ca"))
-	        	 parse(parts[3], hm_ca);
-	         else if(parts[2].equalsIgnoreCase("gl"))
-	        	 parse(parts[3], hm_gl);
-	         else if(parts[2].equalsIgnoreCase("es"))
-	        	 parse(parts[3], hm_es);
-	         else if(parts[2].equalsIgnoreCase("en"))
-	        	 parse(parts[3], hm_en);
-	         else if(parts[2].equalsIgnoreCase("pt"))
-	        	 parse(parts[3], hm_pt);
-	     }
+	     
+	     int[] totalLang = new int[6];
+		 int total = 0;
+			
+		for(int i=0; i<6; i++){
+			totalLang[i] = 0;
+		}
+			
+		String line = "";
+		     while ((line = in.readLine()) != null) {
+		         String parts[] = line.split("\t");
+		         parts[3] = parts[3].toLowerCase();
+		         total++;
+		         if(parts[2].equalsIgnoreCase("eu")){
+		        	 parse(parts[3], hm_eu);
+		        	 totalLang[0]++;
+		         }	        	 
+		         else if(parts[2].equalsIgnoreCase("ca")){
+		        	 parse(parts[3], hm_ca);
+		        	 totalLang[1]++;
+		         } 
+		         else if(parts[2].equalsIgnoreCase("gl")){
+		        	 parse(parts[3], hm_gl);
+		        	 totalLang[2]++;
+		         } 
+		         else if(parts[2].equalsIgnoreCase("es")){
+		        	 parse(parts[3], hm_es);
+		        	 totalLang[3]++;
+		         }	 
+		         else if(parts[2].equalsIgnoreCase("en")){
+		        	 parse(parts[3], hm_en);
+		        	 totalLang[4]++;
+		         }	        	 
+		         else if(parts[2].equalsIgnoreCase("pt")){
+		        	 parse(parts[3], hm_pt);
+		        	 totalLang[5]++;
+		         }	        	 
+		     }
+		     
+		     double prob = 0.0;
+		     for(int i = 0; i<6; i++){
+		    	 prob = Math.log10((double)totalLang[i] / total); 
+		    	 //System.out.println(totalLang[i]);
+		    	 pro_lang.add(prob);
+		    	 //System.out.println(total);
+		     }
 	     //printHashMap(hm_eu);
 	     hm_eu = sortByValues(hm_eu);
 	     hm_ca = sortByValues(hm_ca);
@@ -266,21 +296,22 @@ public class Bigram {
 		   		
 			BufferedReader readTestFile = new BufferedReader(new FileReader("simple-testing-tweets_clean.txt"));
 			//BufferedReader readTestFile = new BufferedReader(new FileReader("testing data.txt"));
-			int right = 0;
-			int total = 0;
+			int right = 0;			
 			int[] rightEachLang = new int[6];
 			int[] totalEachLang = new int[6];
 			for(int i=0; i<6; i++){
 				rightEachLang[i] = 0;
 				totalEachLang[i] = 0;
 			}
-			
-		     while ((line = readTestFile.readLine()) != null) {
-		         String parts[] = line.split("\t");	         
+			bufferWritter.write("Number\t\t\t" + "Result\t" + "Given Language");
+			bufferWritter.newLine();
+			total = 0;
+		    while ((line = readTestFile.readLine()) != null) {
+		         String parts[] = line.split("\t");	      	         
 		         double max = 0.0;
 		         String lang = "";
 		         double temp = 0.0;
-		         
+		         total++;		         
 		         if(parts[2].equalsIgnoreCase("eu"))
 		        	 totalEachLang[0]++;
 		         else if(parts[2].equalsIgnoreCase("ca"))
@@ -294,41 +325,41 @@ public class Bigram {
 		         else if(parts[2].equalsIgnoreCase("pt"))
 		        	 totalEachLang[5]++;
 		         
-		         max = testData(parts[3], pro_eu);	         
+		         max = testData(parts[3], pro_eu) + pro_lang.get(0);	         
 		         lang = "eu";
 		         
-		         temp = testData(parts[3], pro_ca);
+		         temp = testData(parts[3], pro_ca) + pro_lang.get(1);
 		         if(max < temp){
 		        	 max = temp;
 		        	 lang = "ca";
 		         } 
 		         
-		         temp = testData(parts[3], pro_gl);
+		         temp = testData(parts[3], pro_gl) + pro_lang.get(2);
 		         if(max < temp){
 		        	 max = temp;
 		        	 lang = "gl";
 		         }
 		         
-		         temp = testData(parts[3], pro_es);
+		         temp = testData(parts[3], pro_es) + pro_lang.get(3);
 		         if(max < temp){
 		        	 max = temp;
 		        	 lang = "es";
 		         } 
 		         
-		         temp = testData(parts[3], pro_en);
+		         temp = testData(parts[3], pro_en) + pro_lang.get(4);
 		         if(max < temp){
 		        	 max = temp;
 		        	 lang = "en";
 		         } 
 		         
-		         temp = testData(parts[3], pro_pt);
+		         temp = testData(parts[3], pro_pt) + pro_lang.get(5);
 		         if(max < temp){
 		        	 max = temp;
 		        	 lang = "pt";
 		         } 
 		         bufferWritter.write(parts[0] + "\t" + parts[2] + "\t" + lang);
 		         bufferWritter.newLine();
-		         total++;
+		        
 		         if(lang.equalsIgnoreCase(parts[2])){
 		        	 right++;	
 		        	 if(lang.equalsIgnoreCase("eu"))
@@ -346,6 +377,7 @@ public class Bigram {
 		         }
 		         matrix(parts[2], lang);
 		     }
+		     
 		     double result = (double)right / total;
 		     System.out.println(result);
 		     
